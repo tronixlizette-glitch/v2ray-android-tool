@@ -1,0 +1,75 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK on Ubuntu
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Buildozer Global Dir
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+
+      - name: Cache .buildozer Directory
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo5 cmake libffi-dev libssl-dev \
+            python3-pip build-essential ccache \
+            libltdl-dev
+
+      - name: Install Buildozer & Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.37
+
+      - name: Setup Android SDK & NDK via Buildozer
+        run: |
+          buildozer android update 2>&1 | tail -20 || true
+
+      - name: Build Debug APK
+        run: |
+          buildozer -v android debug 2>&1
+        env:
+          BUILDOZER_WARN_ON_ROOT: "0"
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: V2RayTool-debug-apk
+          path: bin/*.apk
+          if-no-files-found: error
+
+      - name: Display APK Info
+        run: |
+          echo "=== APK 构建完成 ==="
+          ls -lh bin/*.apk 2>/dev/null || echo "未找到APK文件"
+          echo ""
+          echo "✅ 请在 Actions → Artifacts 下载 APK"
