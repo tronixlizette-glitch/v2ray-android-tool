@@ -49,9 +49,23 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.37
 
-      - name: Setup Android SDK & NDK via Buildozer
+      - name: Setup Android SDK & Accept Licenses
         run: |
-          buildozer android update 2>&1 | tail -20 || true
+          # 先让 buildozer 下载 SDK
+          buildozer android update 2>&1 | tail -30 || true
+          # 找到 sdkmanager 并自动接受所有 SDK 许可证
+          SDKMANAGER=$(find ~/.buildozer -name "sdkmanager" 2>/dev/null | head -1)
+          if [ -n "$SDKMANAGER" ]; then
+            echo "✅ 找到 sdkmanager: $SDKMANAGER"
+            yes | "$SDKMANAGER" --licenses 2>/dev/null || true
+            # 安装稳定版 build-tools（避免使用 RC 预览版）
+            yes | "$SDKMANAGER" "build-tools;34.0.0" 2>/dev/null || true
+            yes | "$SDKMANAGER" --licenses 2>/dev/null || true
+          else
+            echo "⚠️ 未找到 sdkmanager，跳过许可接受步骤"
+          fi
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
       - name: Build Debug APK
         run: |
