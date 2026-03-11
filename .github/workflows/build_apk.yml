@@ -39,9 +39,6 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev \
-            libgstreamer1.0-dev \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
             libsqlite3-dev \
             sqlite3 \
             bzip2 \
@@ -62,6 +59,7 @@ jobs:
             libtinfo5 \
             cmake \
             ant \
+            libunwind-dev \
             openjdk-17-jdk
 
       - name: Setup Android SDK & Accept Licenses
