@@ -7,67 +7,78 @@ on:
 
 jobs:
   build:
-    name: Build APK on Ubuntu
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
-      - name: Cache Buildozer Global Dir
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
-
-      - name: Cache .buildozer Directory
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-${{ runner.os }}-
-
-      - name: Install System Dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update -qq
+          python -m pip install --upgrade pip
+          pip install buildozer kivy==2.3.0 requests certifi urllib3 charset-normalizer idna
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk \
-            autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev \
-            python3-pip build-essential ccache \
-            libltdl-dev
-
-      - name: Install Buildozer & Cython
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.37
+            build-essential \
+            git \
+            python3-dev \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0-dev \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            libsqlite3-dev \
+            sqlite3 \
+            bzip2 \
+            libbz2-dev \
+            libssl-dev \
+            openssl \
+            libgdbm-dev \
+            libncursesw5-dev \
+            libffi-dev \
+            unzip \
+            zip \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            ant \
+            openjdk-17-jdk
 
       - name: Setup Android SDK & Accept Licenses
         run: |
-          # 1. 先准备 .android 目录
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
           
-          # 2. 让 buildozer 下载基本 SDK
+          # Initialize buildozer and SDK
           buildozer android update 2>&1 | tail -50 || true
           
-          # 3. 找到所有 sdkmanager 并尝试接受所有许可证
           SDK_MANAGERS=$(find ~/.buildozer -name "sdkmanager" 2>/dev/null)
           for SDKMANAGER in $SDK_MANAGERS; do
-            echo "✅ 正在处理 sdkmanager: $SDKMANAGER"
+            echo "Processing: $SDKMANAGER"
             yes | "$SDKMANAGER" --licenses 2>/dev/null || true
-            # 预装稳定版避免 Buildozer 尝试下载预览版
             yes | "$SDKMANAGER" "build-tools;33.0.0" "platforms;android-33" "platform-tools" 2>/dev/null || true
           done
           
-          # 4. 再次全局接受所有许可证
           yes | buildozer android update 2>&1 | tail -30 || true
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
@@ -79,16 +90,8 @@ jobs:
           BUILDOZER_WARN_ON_ROOT: "0"
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: V2RayTool-debug-apk
           path: bin/*.apk
-          if-no-files-found: error
-
-      - name: Display APK Info
-        run: |
-          echo "=== APK 构建完成 ==="
-          ls -lh bin/*.apk 2>/dev/null || echo "未找到APK文件"
-          echo ""
-          echo "✅ 请在 Actions → Artifacts 下载 APK"
