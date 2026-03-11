@@ -20,7 +20,7 @@ version = 1.0.0
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy==2.3.0,requests,certifi,urllib3,charset-normalizer,idna
+requirements = python3,kivy>=2.3.0,<3.0,requests,certifi,urllib3,charset-normalizer,idna
 
 # (str) Supported orientation (landscape, sensorLandscape, portrait or all)
 orientation = portrait
@@ -53,6 +53,9 @@ android.ndk = 25b
 android.apptheme = @android:style/Theme.NoTitleBar
 
 [buildozer]
+
+# 限制并行编译进程数，优化内存使用
+build_flags = -j 2
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
 log_level = 2
