@@ -68,18 +68,17 @@ def get_node_name(link):
 def is_target_country(name):
     if not name:
         return False
-    keywords = [
-        # 美国
-        "美国", "united states", " us ", "(us)", "[us]", "🇺🇸",
-        # 英国
-        "英国", "united kingdom", " uk ", "(uk)", "[uk]", "🇬🇧",
-        # 法国
-        "法国", "france", " fr ", "(fr)", "[fr]", "🇫🇷",
-        # 德国
-        "德国", "germany", " de ", "(de)", "[de]", "🇩🇪",
-    ]
     name_l = name.lower()
-    return any(k in name_l for k in keywords)
+    # 更加智能的词界匹配，防止 "rus" 匹配 "us"
+    import re
+    # 美国/US, 英国/UK, 法国/FR, 德国/DE
+    patterns = [
+        r"美国|united states|\bus\b|\(us\)|\[us\]|🇺🇸",
+        r"英国|united kingdom|\buk\b|\(uk\)|\[uk\]|🇬🇧",
+        r"法国|france|\bfr\b|\(fr\)|\[fr\]|🇫🇷",
+        r"德国|germany|\bde\b|\(de\)|\[de\]|🇩🇪"
+    ]
+    return any(re.search(p, name_l) for p in patterns)
 
 
 # ── 自定义控件 ────────────────────────────────────────
@@ -274,36 +273,51 @@ class V2RayLayout(BoxLayout):
             self._set_btn_state(True)
             return
 
+        # 提取订阅链接 (支持常规正则和 JSON 发现)
         subs = list(set(re.findall(r"https://fn[^\s\"'<]+", html)))
-        if not subs:
-            self._log("❌ 未发现订阅链接，尝试备用解析...")
-            # 备用：抓取所有 https 链接中含 /sub 或 base64 特征的
-            subs = list(set(re.findall(
-                r"https?://[^\s\"'<>]+(?:sub|subscribe|node)[^\s\"'<>]*", html
-            )))
+        
+        # 备用：抓取所有可能包含订阅的链接 (包含 JSON 数据源)
+        backup_subs = re.findall(r"https?://[^\s\"'<>]+(?:sub|subscribe|node|json)[^\s\"'<>]*", html)
+        subs = list(set(subs + backup_subs))
 
         if not subs:
             self._log("❌ 未发现有效订阅链接，请检查 URL")
             self._set_btn_state(True)
             return
 
-        self._log(f"✅ 发现 {len(subs)} 个订阅源")
+        self._log(f"✅ 发现 {len(subs)} 个潜在订阅源")
 
+        final_subs = []
+        processed_urls = set()
+        
+        # 遍历订阅源
         for i, sub in enumerate(subs):
-            self._log(f"[{i+1}/{len(subs)}] 解析: {sub[:60]}...")
+            if sub in processed_urls: continue
+            processed_urls.add(sub)
+            
+            self._log(f"[{i+1}/{len(subs)}] 解析: {sub[:50]}...")
             try:
+                # 针对 JSON 格式索引的特殊处理
+                if sub.endswith(".json") or "json" in sub:
+                     r = requests.get(sub, timeout=15, headers=headers)
+                     try:
+                         data = r.json()
+                         if isinstance(data, dict) and "subscriptions" in data:
+                             self._log(f"   → 发现 JSON 索引，包含 {len(data['subscriptions'])} 个链接")
+                             for item in data["subscriptions"]:
+                                 u = item.get("url")
+                                 if u and u not in processed_urls:
+                                     self._log(f"     + 发现链接: {u[:40]}...")
+                                     # 立即解析新发现的链接
+                                     r_sub = requests.get(u, timeout=15, headers=headers)
+                                     self._parse_nodes(r_sub.text)
+                             continue
+                     except:
+                         pass
+
+                # 常规解析
                 r = requests.get(sub, timeout=15, headers=headers)
-                text = safe_base64_decode(r.text.strip()) or r.text
-                count = 0
-                for line in text.splitlines():
-                    line = line.strip()
-                    if not line:
-                        continue
-                    name = get_node_name(line)
-                    if is_target_country(name):
-                        self.final_node_list.append(line)
-                        count += 1
-                self._log(f"   → 命中 {count} 个节点")
+                self._parse_nodes(r.text)
             except Exception as e:
                 self._log(f"   → 错误: {e}")
 
@@ -315,6 +329,21 @@ class V2RayLayout(BoxLayout):
             Clock.schedule_once(lambda dt: setattr(self.result_text, "text", result), 0)
 
         self._set_btn_state(True)
+
+    def _parse_nodes(self, text):
+        """解析并提取目标国家节点"""
+        decoded_text = safe_base64_decode(text.strip()) or text
+        count = 0
+        for line in decoded_text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            name = get_node_name(line)
+            if is_target_country(name):
+                self.final_node_list.append(line)
+                count += 1
+        if count > 0:
+            self._log(f"   → 命中 {count} 个节点")
 
     # ── 复制逻辑 ─────────────────────────────────────
     def copy_to_clipboard(self, *args):

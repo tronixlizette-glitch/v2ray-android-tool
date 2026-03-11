@@ -6,9 +6,6 @@ import base64
 import json
 import urllib.parse
 import threading
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 import time
 
 class V2RayScraperApp:
@@ -88,7 +85,7 @@ class V2RayScraperApp:
             return ""
         s = s.strip()
         missing = 4 - len(s) % 4
-        if missing:
+        if missing != 4:
             s += "=" * missing
         try:
             return base64.urlsafe_b64decode(s).decode("utf-8", errors="ignore")
@@ -107,68 +104,90 @@ class V2RayScraperApp:
             pass
         return ""
 
-    # 🔥【核心修改点】新增 法国 + 德国
     def is_target_country(self, name):
         if not name:
             return False
-
-        keywords = [
-            # 美国
-            "美国", "united states", " us ", "(us)", "[us]", "🇺🇸",
-            # 英国
-            "英国", "united kingdom", " uk ", "(uk)", "[uk]", "🇬🇧",
-            # 法国
-            "法国", "france", " fr ", "(fr)", "[fr]", "🇫🇷",
-            # 德国
-            "德国", "germany", " de ", "(de)", "[de]", "🇩🇪"
-        ]
-
         name_l = name.lower()
-        return any(k in name_l for k in keywords)
+        import re
+        # 美国/US, 英国/UK, 法国/FR, 德国/DE
+        patterns = [
+            r"美国|united states|\bus\b|\(us\)|\[us\]|🇺🇸",
+            r"英国|united kingdom|\buk\b|\(uk\)|\[uk\]|🇬🇧",
+            r"法国|france|\bfr\b|\(fr\)|\[fr\]|🇫🇷",
+            r"德国|germany|\bde\b|\(de\)|\[de\]|🇩🇪"
+        ]
+        return any(re.search(p, name_l) for p in patterns)
+
+    def _parse_nodes(self, text):
+        decoded = self.safe_base64_decode(text.strip()) or text
+        count = 0
+        for line in decoded.splitlines():
+            line = line.strip()
+            if not line: continue
+            name = self.get_node_name(line)
+            if self.is_target_country(name):
+                self.final_node_list.append(line)
+                count += 1
+        return count
 
     # ---------------- 抓取逻辑 ----------------
 
     def start_scraping(self):
         url = self.url_entry.get().strip()
-        self.log(f"🚀 开始访问: {url}")
-
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--log-level=3")
+        self.log(f"🚀 开始抓取: {url}")
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
 
         try:
-            driver = webdriver.Chrome(service=Service(), options=chrome_options)
-            driver.get(url)
-            time.sleep(5)
-            html = driver.page_source
-            driver.quit()
+            resp = requests.get(url, headers=headers, timeout=20)
+            resp.raise_for_status()
+            html = resp.text
         except Exception as e:
-            self.log(f"❌ Selenium 错误: {e}")
+            self.log(f"❌ 网络错误: {e}")
             return
 
         subs = list(set(re.findall(r"https://fn[^\s\"'<]+", html)))
+        backup_subs = re.findall(r"https?://[^\s\"'<>]+(?:sub|subscribe|node|json)[^\s\"'<>]*", html)
+        subs = list(set(subs + backup_subs))
+
         if not subs:
             self.log("❌ 未发现订阅链接")
             return
 
-        self.log(f"✅ 发现 {len(subs)} 个订阅源")
+        self.log(f"✅ 发现 {len(subs)} 个潜在订阅源")
 
+        processed_urls = set()
         for i, sub in enumerate(subs):
-            self.log(f"[{i+1}/{len(subs)}] 解析 {sub}")
+            if sub in processed_urls: continue
+            processed_urls.add(sub)
+            
+            self.log(f"[{i+1}/{len(subs)}] 解析: {sub[:50]}...")
             try:
-                r = requests.get(sub, timeout=10)
-                text = self.safe_base64_decode(r.text.strip()) or r.text
-                count = 0
-                for line in text.splitlines():
-                    name = self.get_node_name(line)
-                    if self.is_target_country(name):
-                        self.final_node_list.append(line)
-                        count += 1
-                self.log(f"   -> 命中 {count} 个节点")
+                # 处理 JSON 索引
+                if "json" in sub:
+                    r_json = requests.get(sub, timeout=15, headers=headers)
+                    try:
+                        data = r_json.json()
+                        if "subscriptions" in data:
+                            self.log(f"   → 发现 JSON 索引，包含 {len(data['subscriptions'])} 个链接")
+                            for item in data["subscriptions"]:
+                                u = item.get("url")
+                                if u and u not in processed_urls:
+                                    processed_urls.add(u)
+                                    # 自动抓取子链接
+                                    r_sub = requests.get(u, timeout=12, headers=headers)
+                                    c = self._parse_nodes(r_sub.text)
+                                    if c: self.log(f"     + 子链接命中 {c} 个节点")
+                            continue
+                    except: pass
+
+                r = requests.get(sub, timeout=12, headers=headers)
+                c = self._parse_nodes(r.text)
+                if c: self.log(f"   → 命中 {c} 个节点")
             except Exception as e:
-                self.log(f"   -> 错误: {e}")
+                self.log(f"   → 错误: {e}")
 
         self.final_node_list = list(set(self.final_node_list))
         self.log(f"🎉 完成，共筛选 {len(self.final_node_list)} 个节点")
@@ -194,7 +213,7 @@ class V2RayScraperApp:
             return
 
         b64 = base64.b64encode(nodes.encode()).decode()
-        self.log("🌐 上传至 Dpaste")
+        self.log("🌐 上传至 Dpaste...")
 
         try:
             r = requests.post("https://dpaste.com/api/", data={

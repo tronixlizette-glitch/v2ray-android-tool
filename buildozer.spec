@@ -46,6 +46,10 @@ android.api = 33
 # (int) Minimum API your APK / AAB will support.
 android.minapi = 21
 
+# (str) Android build tools version to use
+# 锁定稳定版，避免 Buildozer 自动选择 37-rc2 预览版导致许可证问题
+android.build_tools_version = 34.0.0
+
 # (str) Android NDK directory (if empty, it will be automatically downloaded.)
 #android.ndk_path =
 
@@ -59,6 +63,9 @@ android.minapi = 21
 # This can be useful to avoid getting an error message.
 # (Suggested) match android.api version
 android.skip_update = False
+
+# (int) Android NDK version to use
+android.ndk = 25b
 
 # (str) Android entry point, default is ok for Kivy-based app
 #android.entrypoint = org.kivy.android.PythonActivity
