@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = V2Ray节点工具
+title = V2Ray Node Tool
 
 # (str) Package name
 package.name = v2raytool
@@ -41,14 +41,14 @@ android.presplash_color = #0D1117
 android.permissions = INTERNET,ACCESS_NETWORK_STATE
 
 # (int) Target Android API, should be as high as possible.
-android.api = 34
+android.api = 33
 
 # (int) Minimum API your APK / AAB will support.
 android.minapi = 21
 
 # (str) Android build tools version to use
 # 锁定稳定版，避免 Buildozer 自动选择 37-rc2 预览版导致许可证问题
-android.build_tools_version = 34.0.0
+android.build_tools_version = 33.0.0
 
 # (str) Android NDK directory (if empty, it will be automatically downloaded.)
 #android.ndk_path =

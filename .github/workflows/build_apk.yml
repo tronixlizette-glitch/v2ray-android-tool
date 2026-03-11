@@ -64,7 +64,7 @@ jobs:
             echo "✅ 正在处理 sdkmanager: $SDKMANAGER"
             yes | "$SDKMANAGER" --licenses 2>/dev/null || true
             # 预装稳定版避免 Buildozer 尝试下载预览版
-            yes | "$SDKMANAGER" "build-tools;34.0.0" "platforms;android-34" "platform-tools" 2>/dev/null || true
+            yes | "$SDKMANAGER" "build-tools;33.0.0" "platforms;android-33" "platform-tools" 2>/dev/null || true
           done
           
           # 4. 再次全局接受所有许可证
