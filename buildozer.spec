@@ -41,7 +41,7 @@ android.presplash_color = #0D1117
 android.permissions = INTERNET,ACCESS_NETWORK_STATE
 
 # (int) Target Android API, should be as high as possible.
-android.api = 33
+android.api = 34
 
 # (int) Minimum API your APK / AAB will support.
 android.minapi = 21

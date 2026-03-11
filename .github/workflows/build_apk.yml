@@ -51,19 +51,24 @@ jobs:
 
       - name: Setup Android SDK & Accept Licenses
         run: |
-          # 先让 buildozer 下载 SDK
-          buildozer android update 2>&1 | tail -30 || true
-          # 找到 sdkmanager 并自动接受所有 SDK 许可证
-          SDKMANAGER=$(find ~/.buildozer -name "sdkmanager" 2>/dev/null | head -1)
-          if [ -n "$SDKMANAGER" ]; then
-            echo "✅ 找到 sdkmanager: $SDKMANAGER"
+          # 1. 先准备 .android 目录
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          
+          # 2. 让 buildozer 下载基本 SDK
+          buildozer android update 2>&1 | tail -50 || true
+          
+          # 3. 找到所有 sdkmanager 并尝试接受所有许可证
+          SDK_MANAGERS=$(find ~/.buildozer -name "sdkmanager" 2>/dev/null)
+          for SDKMANAGER in $SDK_MANAGERS; do
+            echo "✅ 正在处理 sdkmanager: $SDKMANAGER"
             yes | "$SDKMANAGER" --licenses 2>/dev/null || true
-            # 安装稳定版 build-tools（避免使用 RC 预览版）
-            yes | "$SDKMANAGER" "build-tools;34.0.0" 2>/dev/null || true
-            yes | "$SDKMANAGER" --licenses 2>/dev/null || true
-          else
-            echo "⚠️ 未找到 sdkmanager，跳过许可接受步骤"
-          fi
+            # 预装稳定版避免 Buildozer 尝试下载预览版
+            yes | "$SDKMANAGER" "build-tools;34.0.0" "platforms;android-34" "platform-tools" 2>/dev/null || true
+          done
+          
+          # 4. 再次全局接受所有许可证
+          yes | buildozer android update 2>&1 | tail -30 || true
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
