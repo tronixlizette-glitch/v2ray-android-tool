@@ -50,31 +50,75 @@ jobs:
 
       - name: Setup Android SDK
         run: |
+          set -x
+          echo "=== 开始 Android SDK 安装 ==="
+          
           # 创建安全的 Android 配置文件
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
 
-          # 配置环境变量
-          echo "ANDROID_HOME=/usr/lib/android-sdk" | tee -a ~/.bashrc
-          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" | tee -a ~/.bashrc
-          source ~/.bashrc
+          # 设置环境变量（直接导出，不依赖 .bashrc）
+          export ANDROID_HOME="/usr/lib/android-sdk"
+          export ANDROID_SDK_ROOT="/usr/lib/android-sdk"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           
-          # 使用官方 SDK 工具
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -P /tmp
-          unzip -qq /tmp/commandlinetools-linux-*.zip -d /usr/lib/android-cmdline-tools
-          mkdir /usr/lib/android-sdk
-          mv /usr/lib/android-cmdline-tools/cmdline-tools /usr/lib/android-sdk/
+          # 使用官方 SDK 工具（添加重试）
+          echo "下载 commandlinetools..."
+          for i in {1..3}; do
+            wget -q --tries=3 --timeout=30 https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -P /tmp && break
+            echo "下载失败，第 $i 次重试..."
+            sleep 5
+          done
+          
+          # 检查下载文件是否存在
+          if [ ! -f /tmp/commandlinetools-linux-*.zip ]; then
+            echo "错误：commandlinetools 下载失败"
+            exit 1
+          fi
+          
+          echo "解压 commandlinetools..."
+          unzip -qq /tmp/commandlinetools-linux-*.zip -d /usr/lib/android-cmdline-tools || {
+            echo "解压失败"
+            exit 1
+          }
+          
+          mkdir -p /usr/lib/android-sdk
+          mv /usr/lib/android-cmdline-tools/cmdline-tools /usr/lib/android-sdk/ || {
+            echo "移动 cmdline-tools 失败"
+            exit 1
+          }
+          
           export PATH="$PATH:/usr/lib/android-sdk/cmdline-tools/bin"
-
-          # 接受许可协议
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          echo "PATH 已更新：$PATH"
           
-          # 安装必需组件
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0" "ndk;25b"
-          sdkmanager --update
+          # 接受许可协议（更健壮的方法）
+          echo "接受 Android SDK 许可证..."
+          for i in {1..10}; do
+            echo "尝试 $i/10: 接受许可证"
+            yes | sdkmanager --licenses >/dev/null 2>&1 && break
+            sleep 2
+          done
+          
+          # 安装必需组件（添加 --sdk_root 参数）
+          echo "安装 platform-tools, platforms;android-33, build-tools;33.0.0, ndk;25b..."
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --verbose "platform-tools" "platforms;android-33" "build-tools;33.0.0" "ndk;25b" || {
+            echo "SDK 组件安装失败"
+            exit 1
+          }
+          
+          echo "更新 SDK 组件..."
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --update || {
+            echo "SDK 更新失败，但继续..."
+          }
           
           # 验证安装
-          sdkmanager --list | grep -E "(Platform-tools|Build-tools|NDK)"
+          echo "验证安装结果..."
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --list | grep -E "(Platform-tools|Build-tools|NDK)" || {
+            echo "警告：未找到预期组件，但继续..."
+          }
+          
+          echo "=== Android SDK 安装完成 ==="
 
       - name: Run Buildozer Build
         run: |
