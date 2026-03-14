@@ -87,7 +87,8 @@ jobs:
           # 更新 buildozer.spec 中的 NDK 版本
           sed -i 's/android.ndk = 25b/android.ndk = 25.2.9519653/' buildozer.spec
           
-          # 直接运行，不进行 exit code 遮掩，这样失败时会直接停止
+          # 确保管道错误能被捕获
+          set -o pipefail
           buildozer -v android debug 2>&1 | tee build.log
           
       - name: Upload APK Artifact

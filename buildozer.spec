@@ -18,7 +18,7 @@ version = 1.0.0
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy>=2.3.0,<3.0,requests,certifi,urllib3,charset-normalizer,idna
+requirements = python3,kivy>=2.3.0,<3.0,requests,certifi,urllib3,charset-normalizer,idna,openssl
 
 # (str) Supported orientation (landscape, sensorLandscape, portrait or all)
 orientation = portrait
