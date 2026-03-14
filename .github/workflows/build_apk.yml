@@ -41,7 +41,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          pip install buildozer==1.5.0 cython==3.0.0 requests==2.31.0
+          pip install buildozer==1.7.0 cython==3.0.0 requests==2.31.0
           pip install kivy==2.3.0
 
       - name: Install system dependencies

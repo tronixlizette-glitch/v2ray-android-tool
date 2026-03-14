@@ -42,7 +42,13 @@ android.minapi = 21
 android.build_tools_version = 33.0.0
 
 # (bool) If True, then skip trying to update the Android sdk
-android.skip_update = False
+android.skip_update = True
+
+# (str) Android SDK directory
+android.sdk_path = /home/runner/android-sdk
+
+# (str) Android NDK directory
+android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
 
 # (bool) Accept Android SDK licenses automatically
 android.accept_sdk_license = True
