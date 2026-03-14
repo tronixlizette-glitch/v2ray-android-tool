@@ -32,29 +32,26 @@ android.presplash_color = #0D1117
 # (list) Permissions
 android.permissions = INTERNET,ACCESS_NETWORK_STATE
 
-# (int) Target Android API, should be as high as possible.
+# (int) Android API to use
 android.api = 33
 
-# (int) Minimum API your APK / AAB will support.
+# (int) Minimum API your APK will support.
 android.minapi = 21
 
-# (str) Android build tools version to use
+# (int) Android SDK version to use
+#android.sdk = 20
+
+# (str) Android build-tools version to use
 android.build_tools_version = 33.0.0
 
 # (bool) If True, then skip trying to update the Android sdk
-android.skip_update = True
-
-# (str) Android SDK directory
-android.sdk_path = /home/runner/android-sdk
-
-# (str) Android NDK directory
-android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
+android.skip_update = False
 
 # (bool) Accept Android SDK licenses automatically
 android.accept_sdk_license = True
 
 # (int) Android NDK version to use
-android.ndk = 25.2.9519653
+android.ndk = 25.1.8937393
 
 # (str) Android app theme, default is ok for Kivy-based app
 android.apptheme = @android:style/Theme.NoTitleBar
