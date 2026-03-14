@@ -51,7 +51,7 @@ android.skip_update = False
 android.accept_sdk_license = True
 
 # (int) Android NDK version to use
-android.ndk = 25.1.8937393
+#android.ndk = 25b
 
 # (str) Android app theme, default is ok for Kivy-based app
 android.apptheme = @android:style/Theme.NoTitleBar
