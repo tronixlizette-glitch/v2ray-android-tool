@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90  # 延长超时限制
+    timeout-minutes: 90
 
     steps:
       - name: Check system environment
@@ -84,7 +84,7 @@ jobs:
           export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$NDK_HOME
           
-          # 更新 buildozer.spec 中的 NDK 版本
+          # 更新 buildozer.spec 中的 NDK 版本 (如果是旧版格式)
           sed -i 's/android.ndk = 25b/android.ndk = 25.2.9519653/' buildozer.spec
           
           buildozer -v android debug 2>&1 | tee build.log
