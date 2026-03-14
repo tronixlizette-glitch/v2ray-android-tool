@@ -8,7 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60  # 设置超时限制
+    timeout-minutes: 60  # 设置超时限制name: Build Android APK
+
+    on:
+      push:
+          branches: [ main ]  workflow_dispatch:
+
+          job
 
     steps:
       - name: Checkout code
@@ -49,7 +55,7 @@ jobs:
             autoconf
 
       - name: Setup Android SDK using actions/setup-android
-        uses: actions/setup-android@v2.1.0
+        uses: android-actions/setup-android@v3
         with:
           api-level: 33
           ndk-version: '25.1.8937393'
