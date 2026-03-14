@@ -7,10 +7,24 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60  # 设置超时限制
+    runs-on: ubuntu-latest
+    timeout-minutes: 90  # 延长超时限制
 
     steps:
+      - name: Check system environment
+        run: |
+          echo "=== 环境诊断 ==="
+          uname -a
+          df -h
+          free -h
+          echo "Python version:"
+          python3 --version
+          echo "pip version:"
+          pip3 --version
+          echo "Git version:"
+          git --version
+          echo "=== 环境诊断结束 ==="
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -48,20 +62,30 @@ jobs:
             ant \
             autoconf
 
-      - name: Setup Android SDK using actions/setup-android
-        uses: actions/setup-android@v2.1.0
-        with:
-          api-level: 33
-          ndk-version: '25.1.8937393'
-          components: 'platform-tools,build-tools;33.0.0'
+      - name: Setup Android SDK and NDK
+        run: |
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/* cmdline-tools/latest/ 2>/dev/null || true
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0" "ndk;25.2.9519653"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
       - name: Run Buildozer Build
         run: |
-          export PATH="$PATH:${{ env.ANDROID_HOME }}/tools:${{ env.ANDROID_HOME }}/tools/bin:${{ env.ANDROID_HOME }}/platform-tools:${{ env.ANDROID_HOME }}/ndk/25.1.8937393"
-          export ANDROID_SDK_ROOT="${{ env.ANDROID_HOME }}"
-          echo "ANDROID_HOME=${{ env.ANDROID_HOME }}"
-          echo "ANDROID_SDK_ROOT=${{ env.ANDROID_SDK_ROOT }}"
-          echo "PATH=$PATH"
+          export ANDROID_HOME=$HOME/android-sdk
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$NDK_HOME
+          
+          # 更新 buildozer.spec 中的 NDK 版本
+          sed -i 's/android.ndk = 25b/android.ndk = 25.2.9519653/' buildozer.spec
           
           buildozer -v android debug 2>&1 | tee build.log
           if [ ${PIPESTATUS[0]} -eq 0 ]; then

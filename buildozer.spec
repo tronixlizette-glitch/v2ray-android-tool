@@ -1,6 +1,7 @@
 [app]
 
 # (str) Title of your application
+source.dir = .
 title = V2Ray Node Tool
 
 # (str) Package name
@@ -8,9 +9,6 @@ package.name = v2raytool
 
 # (str) Package domain (needed for android/ios packaging)
 package.domain = org.v2raytool
-
-# (str) Source code where the main.py live
-source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
 source.include_exts = py,png,jpg,kv,atlas
@@ -46,8 +44,11 @@ android.build_tools_version = 33.0.0
 # (bool) If True, then skip trying to update the Android sdk
 android.skip_update = False
 
+# (bool) Accept Android SDK licenses automatically
+android.accept_sdk_license = True
+
 # (int) Android NDK version to use
-android.ndk = 25b
+android.ndk = 25.2.9519653
 
 # (str) Android app theme, default is ok for Kivy-based app
 android.apptheme = @android:style/Theme.NoTitleBar
