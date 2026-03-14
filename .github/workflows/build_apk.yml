@@ -8,7 +8,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60  # 设置超时限制name: Build Android APK
+    timeout-minutes: 60  # 设置超时限制name: name: Build Android APK
+    
+    on:
+      push:
+          branches: [ main ]
+            workflow_dispatch:
+            
+            jobsBuild Android APK
 
     on:
       push:
