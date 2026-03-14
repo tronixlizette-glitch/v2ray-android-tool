@@ -84,27 +84,22 @@ jobs:
           export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$NDK_HOME
           
-          # 更新 buildozer.spec 中的 NDK 版本 (如果是旧版格式)
+          # 更新 buildozer.spec 中的 NDK 版本
           sed -i 's/android.ndk = 25b/android.ndk = 25.2.9519653/' buildozer.spec
           
+          # 直接运行，不进行 exit code 遮掩，这样失败时会直接停止
           buildozer -v android debug 2>&1 | tee build.log
-          if [ ${PIPESTATUS[0]} -eq 0 ]; then
-            echo "BUILD_STATUS=success" >> $GITHUB_ENV
-          else
-            echo "BUILD_STATUS=failed" >> $GITHUB_ENV
-          fi
-        continue-on-error: false
-
+          
       - name: Upload APK Artifact
-        if: ${{ env.BUILD_STATUS == 'success' }}
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: V2RayTool_APK
           path: bin/*.apk
           
       - name: Upload Build Logs
-        if: ${{ failure() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Build_Error_Logs
-          path: buildozer.spec.log
+          name: Build_Logs
+          path: build.log
