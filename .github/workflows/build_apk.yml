@@ -12,16 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
       - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1.2
+        uses: ArtemSBulgakov/buildozer-action@master
         with:
           command: buildozer -v android debug
-          version: 1.5.0
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
