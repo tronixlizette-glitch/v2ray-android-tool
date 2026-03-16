@@ -70,7 +70,7 @@ jobs:
           export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$NDK_HOME
           
-          # 运行构建 (verbose 模式，输出详细日志)
+          # 运行构建
           buildozer -v android debug 2>&1 | tee build.log
           
       - name: Upload APK Artifact
