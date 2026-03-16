@@ -61,7 +61,14 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0" "ndk;25.2.9519653"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
           echo "NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
+          
+          # 也设置到 bash 环境，让 buildozer 能找到
+          echo "ANDROID_HOME=$ANDROID_HOME" >> ~/.bashrc
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> ~/.bashrc
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> ~/.bashrc
+          echo "NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> ~/.bashrc
 
       - name: Run Buildozer Build
         id: buildozer_build

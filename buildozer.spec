@@ -46,7 +46,10 @@ android.minapi = 21
 android.build_tools_version = 33.0.0
 
 # (bool) If True, then skip trying to update the Android sdk
-android.skip_update = False
+android.skip_update = True
+
+# (bool) If True, then skip automatic NDK download
+android.skipped_ndk_check = True
 
 # (bool) Accept Android SDK licenses automatically
 android.accept_sdk_license = True
