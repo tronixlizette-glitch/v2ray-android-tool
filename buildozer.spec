@@ -2,6 +2,7 @@
 
 # (str) Title of your application
 source.dir = .
+source.main = main.py
 title = V2Ray Node Tool
 
 # (str) Package name
