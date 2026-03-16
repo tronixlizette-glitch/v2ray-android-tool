@@ -64,17 +64,35 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
 
       - name: Run Buildozer Build
+        id: buildozer_build
         run: |
+          set -e  # 遇到错误立即退出
+          
           export ANDROID_HOME=$HOME/android-sdk
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$NDK_HOME
           
-          # 进入工作目录，这样 bin/ 文件夹会创建在正确的路径
+          # 确认环境变量已设置
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "NDK_HOME=$NDK_HOME"
+          
+          # 进入工作目录
           cd $GITHUB_WORKSPACE
           
           # 运行构建
-          buildozer -v android debug 2>&1 | tee build.log
+          buildozer -v android debug | tee build.log
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          
+          # 检查构建是否成功
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "Buildozer failed with exit code $BUILD_EXIT_CODE"
+            exit 1
+          fi
+          
+          # 验证 APK 是否生成
+          echo "Looking for APK in bin/..."
+          find . -name "*.apk" -ls || echo "No APK found!"
           
       - name: Upload APK Artifact
         if: success()
