@@ -9,15 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 90
-
     steps:
       - uses: actions/checkout@v5
 
-      - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
+      - name: Build APK with Buildozer (Fixed)
+        uses: tronixlizette-glitch/buildozer-action@master
         with:
           command: buildozer -v android debug
-        
+      
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
