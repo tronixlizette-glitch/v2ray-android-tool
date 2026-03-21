@@ -8,20 +8,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Build with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
         id: buildozer
         with:
           command: buildozer android debug
           buildozer_version: stable
-      
-      - name: Upload APK
+          
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
-        if: success()
         with:
-          name: V2RayTool-APK
-          path: ${{ steps.buildozer.outputs.filename }}
+          name: v2raytool-apk
+          path: .buildozer/android/platform/build-*/dists/v2raytool/*.apk
+          if-no-files-found: error
