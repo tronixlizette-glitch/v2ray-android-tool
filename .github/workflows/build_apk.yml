@@ -10,15 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Build APK with Buildozer (Fixed)
-        uses: tronixlizette-glitch/buildozer-action@master
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          command: buildozer -v android debug
+          command: buildozer android debug
+          buildozer_version: stable
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
-          name: V2RayTool_APK
-          path: bin/*.apk
+          name: V2RayTool-APK
+          path: ${{ steps.buildozer.outputs.filename }}
